@@ -1,0 +1,37 @@
+
+
+#BSUB -P crispresso
+#BSUB -o crispressoPooled_BE_clazzaro_2020-12-03/log_files/BaseE_%J_%I.out -e crispressoPooled_BE_clazzaro_2020-12-03/log_files/BaseE_%J_%I.err
+#BSUB -n 1
+#BSUB -q standard
+#BSUB -R "span[hosts=1] rusage[mem=12000]"
+#BSUB -J "BaseE[1-12]"
+
+
+
+module purge
+
+id=$LSB_JOBINDEX
+COL1=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $1}'`
+COL2=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $2}'`
+COL3=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $3}'`
+COL4=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $4}'`
+COL5=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $5}'`
+COL6=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $6}'`
+COL7=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $7}'`
+COL8=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $8}'`
+COL9=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1|awk -F "	" '{print $9}'`
+LINE=`head -n $id crispressoPooled_BE_clazzaro_2020-12-03.input|tail -n1`
+
+ncore=1
+mem=12000
+PATH=/home/yli11/HemTools/bin:/hpcf/lsf/lsf_prod/10.1/linux3.10-glibc2.17-x86_64/etc:/hpcf/lsf/lsf_prod/10.1/linux3.10-glibc2.17-x86_64/bin:/usr/lpp/mmfs/bin:/usr/lpp/mmfs/lib:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibutils/bin:/sbin:/cm/local/apps/environment-modules/3.2.10/bin:/opt/puppetlabs/bin
+export PATH=$PATH:"/home/yli11/HemTools/bin"
+module load conda3
+source activate /home/yli11/.conda/envs/crispresso2_env/
+module load samtools/1.7
+CRISPRessoPooled -r1 ${COL1} -r2 ${COL2} --name ${COL3} -o crispressoPooled_BE_clazzaro_2020-12-03/${COL3}_results -f ${COL4} --quantification_window_size 10 --quantification_window_center -10 --base_editor_output --conversion_nuc_from A --conversion_nuc_to G
+module load python/2.7.13
+cd crispressoPooled_BE_clazzaro_2020-12-03
+crispressoPooled_allele_edit_eff.py ${COL3} ../crispressoPooled_BE_clazzaro_2020-12-03_info.tsv A G ../SNP.tsv
+
