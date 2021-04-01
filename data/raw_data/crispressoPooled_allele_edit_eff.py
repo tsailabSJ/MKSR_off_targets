@@ -38,45 +38,29 @@ def check_header(input_gRNA,table_header_list):
 		exit()
 	
 
-def is_edit(r,ref,alt,SNP_pos=0,SNP_base=None):
-	read = r.Aligned_Sequence[10:30]
-	gRNA = r.Reference_Sequence[10:30]
+
+def is_edit2(r,ref,alt,gRNA_length,SNP_dict=None):
+	# update: fix for 19bp and 21 bp sgRNA
+	offset = 20-gRNA_length
+	read = r.Aligned_Sequence[10+offset:30]
+	gRNA = r.Reference_Sequence[10+offset:30]
 	if read == gRNA:
 		return False
 	count = 1
-	for i in range(len(read)):
-		a = read[i]
-		b = gRNA[i]
-		if count == SNP_pos:
-			b = SNP_base
-			if r['%Reads'] >1:
-				print (read,gRNA,r['%Reads'],a,b,SNP_base)
-		if (b == ref) and (a == alt):
-			return True
-		count += 1
-	return False
 	
-def is_edit2(r,ref,alt,SNP_dict=None):
-	read = r.Aligned_Sequence[10:30]
-	gRNA = r.Reference_Sequence[10:30]
-	if read == gRNA:
-		return False
-	count = 1
-	for i in range(len(read)):
+	for i in range(3,10): # specificaly modified for revision, original was all protospacer sequence
 		a = read[i]
 		b = gRNA[i]
 		try:
 			SNP_base = SNP_dict[count]
 			b = SNP_base
-			# if r['%Reads'] >1:
-				# print (read,gRNA,r['%Reads'],a,b,SNP_base)
 		except:
 			pass
 		if (b == ref) and (a == alt):
 			return True
 		count += 1
 	return False
-
+	
 def get_SNP_dict(df):
 	try:
 		df.shape[1]
@@ -97,23 +81,17 @@ def parse_df(f,gRNA,ref,alt,snp):
 		exit()
 	try:
 		tmp = snp.loc[gRNA]
-		# print (tmp)
 		flag = True
 	except:
 		tmp = None
 		flag = False
 	if flag:
-		# SNP_pos = tmp[1]
-		# SNP_base = tmp[2]
 		SNP_dict = get_SNP_dict(tmp)
 		# print (SNP_dict)
 	else:
-		# SNP_pos = 0
-		# SNP_base = None
 		SNP_dict = None
 	# print (f)
-	# df['is_edit'] = df.apply(lambda r: is_edit(r,ref,alt,SNP_pos,SNP_base),axis=1)
-	df['is_edit'] = df.apply(lambda r: is_edit2(r,ref,alt,SNP_dict),axis=1)
+	df['is_edit'] = df.apply(lambda r: is_edit2(r,ref,alt,len(gRNA),SNP_dict),axis=1)
 	edited_N = df[(df.Unedited == False)&(df.is_edit == True)]['#Reads'].sum()
 	edited_P = df[(df.Unedited == False)&(df.is_edit == True)]['%Reads'].sum()
 	return edited_N,edited_P
@@ -132,8 +110,10 @@ try:
 except:
 	SNP=None
 
-
-
+def correct_name(x):
+	x = x.replace(":","_")
+	x = x.replace(".","_")
+	return x
 	
 for s in sample_id_list:
 	outfile = "%s.allele.edit.tsv"%(s)
@@ -142,8 +122,11 @@ for s in sample_id_list:
 	gRNA_list = []
 	name_list = []
 	for name,_,gRNA in df.values:
-		file = "{0}_results/CRISPRessoPooled_on_{0}/CRISPResso_on_{1}/Alleles_frequency_table_around_sgRNA_{2}.txt".format(s,name,gRNA)
+		# print (name,gRNA)
+		file = "{0}_results/CRISPRessoPooled_on_{0}/CRISPResso_on_{1}/Alleles_frequency_table_around_sgRNA_{2}.txt".format(s,correct_name(name),gRNA)
+		# print (file)
 		if os.path.isfile(file):
+			# print (name,gRNA)
 			N,P = parse_df(file,gRNA,ref,alt,SNP)
 		else:
 			N=-1

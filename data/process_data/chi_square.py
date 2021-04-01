@@ -1,10 +1,11 @@
-
 # exec(open("chi_square.py").read())
-from scipy import stats, optimize, interpolate
+
+from scipy import stats
 import pandas as pd
 import glob
 import os
 import scipy
+from statsmodels.stats.multitest import multipletests
 
 
 df = pd.read_csv("design.txt",sep="\t",header=None)
@@ -18,10 +19,17 @@ control = "Control"
 
 
 def parse_df(f):
-	
+	# print (f)
+	# 
 	df = pd.read_csv(f,sep="\t",index_col=0)
 	label=f.split("_")[0]
+	# if %Reads is 0, we won't get to know the total reads, then just set it as -1
+	# print (df.sort_values('%Reads').head(10))
+	df['%Reads'] = df['%Reads'].replace(0,-1)
+	# print (df.sort_values('%Reads').head(10))
+	# print (df.sort_values('%Reads').tail(10))
 	df['%s_Total'%(label)] = df["#Reads"]/(df['%Reads']/100)
+	
 	df['%s_Total'%(label)] = df['%s_Total'%(label)].astype(int)
 	df['%s_Reads'%(label)] = df["#Reads"]
 	df = df[['%s_Total'%(label),'%s_Reads'%(label)]]
@@ -33,7 +41,9 @@ def parse_df(f):
 
 
 def parse_list(myList,label):
+	# print (myList)
 	df_list = [parse_df(glob.glob("%s*.allele.edit.tsv"%(f))[0]) for f in myList]
+	# print (df_list)
 	df = pd.concat(df_list,axis=1)
 	
 	df['%s_Total'%(label)]=df[['%s_Total'%(f) for f in myList]].sum(axis=1)
@@ -62,15 +72,16 @@ def get_diff(r,label):
 	treatment = float(r["%s_Reads"%(label)])/r["%s_Total"%(label)]
 	control = float(r["%s_Reads"%(control)])/r["%s_Total"%(control)]
 	return treatment - control
-from statsmodels.stats.multitest import multipletests
 
 # chi2, p, dof, expected = sp.stats.chi2_contingency(x)
 df_results = []
+# print (df)
 for s,d in df.groupby(1):
-	# print (s)
+	print (s)
 	df_list = []
 	for s2,d2 in d.groupby(3):
-		# print (s2)
+		print (s2)
+		# print (d2)
 		# continue
 		
 		a = d2[d2[0]==g1]
@@ -108,6 +119,7 @@ for s,d in df.groupby(1):
 	# print (tmp.columns)
 	columns = ["Treated_mRNA_Total","Treated_mRNA_Reads","Treated_protein_Total","Treated_protein_Reads","Control_Total","Control_Reads","Treated_mRNA_vs_control_p_value","Treated_mRNA_vs_control_diff","Treated_mRNA_vs_control_FDR","Treated_protein_vs_control_p_value","Treated_protein_vs_control_diff","Treated_protein_vs_control_FDR"]
 	tmp = tmp[columns]
+	tmp['Control_%edit'] = tmp['Control_Reads']/tmp['Control_Total']
 	tmp.columns = [s+"|"+x for x in tmp.columns]
 
 	df_results.append(tmp)
@@ -133,7 +145,7 @@ def pass_cutoff(r):
 	for s in df[1].unique().tolist():
 		FDR = "%s|Treated_mRNA_vs_control_FDR"%(s)
 		diff = "%s|Treated_mRNA_vs_control_diff"%(s)
-		if r[FDR] <0.05 and r[diff]>0.01:
+		if r[FDR] <0.05 and r[diff]>0.005:
 			s_list.append(s)
 			
 	if len(s_list)==0:
@@ -143,8 +155,6 @@ def pass_cutoff(r):
 df_final['selected'] = df_final.apply(pass_cutoff,axis=1)
 
 df_final = df_final.sort_values('max_diff',ascending=False)
-selected = ["Target_32","Target_34","Target_03","Target_46","Target_14","Target_70","Target_51","MKSR_Target11","Target_74","MKSR_Target52","Target_29","Target_60","Target_39","Target_07","Target_21","Target_15","Target_43","Target_26","Target_23","MKSR_Target20","Target_37","Target_65","Target_33","Target_80","Target_18"]
-df_final['Selected_by_Cissa'] = [x in selected for x in df_final.index]
 # print (df_final.head())
 df_final.to_csv("chi_square_test.csv")
 

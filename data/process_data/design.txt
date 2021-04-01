@@ -22,3 +22,16 @@ Treated_protein	2_MC0010	CRL1970	casOffinder
 Control	3_MC0010	CRL1971	casOffinder
 Treated_mRNA	3_MC0010	CRL1972	casOffinder
 Treated_protein	3_MC0010	CRL1973	casOffinder
+Treated_mRNA	2_MC008	CRL2350	circle_2
+Treated_protein	2_MC008	CRL2351	circle_2
+Control	2_MC008	CRL2352	circle_2
+Treated_mRNA	3_MC008	CRL2353	circle_2
+Treated_protein	3_MC008	CRL2354	circle_2
+Control	3_MC008	CRL2355	circle_2
+Control	2_MC0010	CRL2356	circle_2
+Treated_mRNA	2_MC0010	CRL2357	circle_2
+Treated_protein	2_MC0010	CRL2358	circle_2
+Control	3_MC0010	CRL2359	circle_2
+Treated_mRNA	3_MC0010	CRL2360	circle_2
+Treated_protein	3_MC0010	CRL2361	circle_2
+
